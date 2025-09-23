@@ -8,7 +8,9 @@ wheels/
 
 # Virtual environments
 .venv/
+.env
 
+# My notes
 to_do.txt
 
 # Folders
@@ -18,3 +20,7 @@ models/
 
 # For my sanity when learning to use uv
 requirements.txt
+check.txt
+
+# Norwegian Dictionaries
+norw_dictionaries/

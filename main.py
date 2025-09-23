@@ -139,25 +139,44 @@ async def processs(filename: str = Form(...)):
     file = os.path.join(IMAGES_FOLDER, filename)
     # Extract text from a file
     text_ = extract_text(file)
-    # Process text 
-    text_= process_text(text_)
-    # Extract norwegian texts from whole text
-    norwegian_data = analyze_text(text_) # dict - {'words': [], 'sentences': []}
+    if text_ != None:
+        # Process text 
+        # text_= process_text(text_)
+
+        # Prepare text and lower the number of tokens for LLM
+        new_text = create_word_list(text_)
+        # Extract norwegian texts from whole text
+        norwegian_data = create_dict(new_text) # list -> {word: [{oversettelse: pl_word, betydning: meaning}, ...], ...}
 
 
-    return HTMLResponse(f"""
-    <html>
-        <body style="font-family: sans-serif; text-align: center;">
-            <h1>Wybrano plik:</h1>
-            <p>{filename}</p>
-            <img src="/img/{filename}" style="max-width:300px;">
-            <br><br>
-            {norwegian_data}
-            <br>
-            <a href="/transcribe">Wróć</a>
-        </body>
-    </html>
-    """)
+        return HTMLResponse(f"""
+        <html>
+            <body style="font-family: sans-serif; text-align: center;">
+                <h1>Wybrano plik:</h1>
+                <p>{filename}</p>
+                <img src="/img/{filename}" style="max-width:300px;">
+                <br><br>
+                {norwegian_data}
+                <br>
+                <a href="/transcribe">Wróć</a>
+            </body>
+        </html>
+        """)
+    
+    else: 
+        return HTMLResponse(f"""
+        <html>
+            <body style="font-family: sans-serif; text-align: center;">
+                <h1>Wybrano plik:</h1>
+                <p>{filename}</p>
+                <img src="/img/{filename}" style="max-width:300px;">
+                <br><br>
+                There was an error during reading a text file.
+                <br>
+                <a href="/transcribe">Wróć</a>
+            </body>
+        </html>
+        """)
 
 if __name__ == "__main__":
     os.makedirs(TEMP_FOLDER, exist_ok=True)
