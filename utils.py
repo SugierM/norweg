@@ -63,7 +63,7 @@ def straighten_img_path(folder_path: str, image_path: str) -> str:
     return os.path.join(folder_path, new_name) 
 
 
-def handle_json_response(prompt) -> dict:
+def llm_to_json(prompt) -> dict:
     response = ollama.chat(model="gpt-oss:20b", messages=[
         {"role": "user", "content": prompt}
     ],

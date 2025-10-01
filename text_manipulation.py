@@ -7,20 +7,24 @@ import pytesseract
 from PIL import Image
 from dotenv import load_dotenv
 from spylls.hunspell import Dictionary
+import spacy
+import re
+
 
 load_dotenv()
 pytesseract.pytesseract.tesseract_cmd = os.environ.get("TESSERACT_PATH")
 # Dictionary
 DIC_PATH = os.path.join("norw_dictionaries", os.environ.get("DICTIONARY"))
 NORW_DIC = Dictionary.from_files(DIC_PATH)
+nlp = spacy.load("nb_core_news_md")
 
 # There is high chance that model will be changed, its just PoC even for scope of this project, maybe XD
-def analyze_text(text: List[str]) -> dict:
+def analyze_text(text: dict) -> dict:
     """
     Analyze words with LLM to translate them and give meaning begind them.
 
     Args:
-        text - list of words that will be translated
+        text - 
     
     Returns:
         A dictionary containing  two keys with given values:
@@ -28,28 +32,55 @@ def analyze_text(text: List[str]) -> dict:
     """
 # ___________________________________________________________________________________________________________
 
+# {
+# 'drikke': [
+#     {
+#     'pos': 'noun',
+#     'en_translation': ['drink']
+#     },
+#     {
+#     'pos': 'verb',
+#     'en_translation': ['to drink']
+#     }
+# ],
+# 'pytt': [
+#     {
+#     'pos': 'noun',
+#     'en_translation': ['a pond', 'pool (of water)', 'puddle']
+#     }
+# ],
+# 'vennen': [
+#     {
+#     'pos': 'noun',
+#     'en_translation': ['definite singular of venn']
+#     }
+# ]
+# }
+
 
     prompt = f"""
 Use concise internal reasoning (thinking: low).
-Du er en assistent som kun skal returnere gyldig JSON. Ikke legg til kommentarer eller ekstra tekst; returner kun JSON.
+You are an assistant that communicates only in JSON. Do not use natural language, explanations, or comments.
+Output a single valid JSON object with double-quoted keys and strings.
 
-Oppgave:
-
-1. Du vil motta en liste med norske ord (substantiv, verb osv.).
-2. For hvert ord: returner opptil tre av de vanligste oversettelsene til polsk.
-3. For hver oversettelse: legg til en kort forklaring på polsk (enkel, ordbok-stil).
-4. Hvis et ord har færre enn tre vanlige oversettelser, returner bare de som er vanlige.
-5. Behold nøyaktig JSON-strukturen vist nedenfor (med riktige nøkkelnavn og nesting). Bruk det norske ordet som toppnivånøkkel.
-6. Ikke finn på ekstra felt. Ikke ta med forklaringer, notater eller eksempler utenfor JSON.
+1. Preserve the input JSON structure exactly as given (keys, arrays, objects and values). Do not modify anything.
+2. For each sense object, add a new key "pl_translation" containing Polish equivalents that best match the "en_translation" meanings.
+2. Do not translate proper names; for morphological/grammatical notes (e.g., "definite singular of X"), provide a Polish explanatory phrase (e.g., "liczba pojedyncza określona od 'X'"). Output only the transformed JSON, no natural language or comments.
 
 Output JSON example:
-
 {{
-  "bok": [
-    {{"oversettelse": "książka", "betydning": "zbiór zapisanych stron"}},
-    {{"oversettelse": "tom", "betydning": "jeden egzemplarz książki"}},
-    {{"oversettelse": "album", "betydning": "zbiór ilustracji lub zdjęć"}}
-  ]
+  'pytt': [
+    {{
+      'pos': 'noun',
+      'en_translation': ['a pond', 'pool (of water)', 'puddle']
+      'pl_translation': ['staw', 'sadzawka', 'kałuża']
+    }}],
+  'vennen': [
+    {{
+      'pos': 'noun',
+      'en_translation': ['definite singular of venn']
+      'pl_translation': ['liczba pojedyncza określona od 'venn' (przyjaciel)']
+    }}]
 }}
 
 Input words (Norwegian):
@@ -58,7 +89,7 @@ Input words (Norwegian):
 
 """
 
-    data = handle_json_response(prompt)
+    data = llm_to_json(prompt)
     ########
     return data 
 
@@ -88,9 +119,9 @@ def extract_text(image_path: str) -> str:
     try:
         img = Image.open(image_path)
         text = pytesseract.image_to_string(img, lang="nor+pol")
-        print("_" * 20, "RAW TEXT", "_" * 20)
-        print(text)
-        print("_" * 25, "_" * 25)
+        # print("_" * 20, "RAW TEXT", "_" * 20)
+        # print(text)
+        # print("_" * 25, "_" * 25)
         return text
     except Exception as e:
         print("Error during reading text from image.")
@@ -133,7 +164,7 @@ JSON:
 """
 
     # Utilize LLM to correct everything
-    new_data = handle_json_response(prompt)
+    new_data = llm_to_json(prompt)
     try:
         assert data["words_len"] == len(new_data["words"])
 
@@ -159,7 +190,7 @@ def create_word_list(text: str) -> List[str]:
     """
     words = set()
     skipped = set("ąćęłńóśźż0123456789")
-    for word in text.split():
+    for word in re.split(r"[ ,.]+", text.strip()):
         # Skip if it contains undesired characters
         if any(char in skipped for char in word):
             continue
@@ -170,10 +201,7 @@ def create_word_list(text: str) -> List[str]:
         # Skip empty strings
         if clean:
             words.add(clean)
-    
-    print("_" * 20, "AFTER SPLIT", "_" * 20)
-    print(words)
-    print("_" * 25, "_" * 25)
+
     return words
 
 
@@ -239,10 +267,49 @@ def create_dict(words: List[str]) -> dict:
 
     return to_ret
 
-        
+
+def get_lemmas(words: List[str]) -> dict:
+    """
+    
+    """
+    text = " ".join(words)
+    doc = nlp(text)
+    return {t.text: t.lemma_ for t in doc}
+
 
 if __name__ == "__main__":
-    test = "Zdania proste 1 Helsetninger 1 | FRP sino86, która jest istotna do tego, by zrozumieć Części zdania w zdaniu prostym mają ustaloną kolejność, która j Przekaz, wane treŚci. å . | å + sh 1 F ai 1 i n i i Zdanie w języku norweskim musi zawierać podmiot i orzeczenie. Znajdują py 8 oi Orzeczen; A jest zawsze na drugim miejscu, podmiot na pierwszym lub, jeśli pierwsze miejsce jest zajęte, na trzecim. Przykład Hun danser i kveld. (Ona tańczy dziś wieczorem.) I kveld danser hun. (Ona tańczy dziś wieczorem.) B Jeśli w zdaniu występuje okolicznik zdaniowy (np. IKKE, OFTE, SJELDEN, ALLTID, ALDRI, JO), t0 znajduje się tuż za orzeczeniem. Jeśli za orzeczeniem stoi podmiot, to związek podmiot-orzeczenie nie może uler rozbiciu i okolicznik zdaniowy przechodzi za podmiot. Przykład Hun danser ikke i kveld. (Ona nie tańczy dziś wieczorem.) I kveld danser hun ikke. (Ona nie tańczy dziś wieczorem.) Ę Jeśli orzeczenie w zdaniu jest złożone (np. perfektum, futurum), to okolicznik zdaniowy znajduje się za łącz- nikiem (pierwsza część orzeczenia). Jeśli pierwsze miejsce w zdaniu jest zajęte nie przez podmiot, to nie ulega rozbiciu związek podmiot-łącznik i okolicznik zdaniowy przesuwa się za podmiot. Przykład Hun skal danse i kveld. (Ona będzie tańczyć dziś wieczorem.) Hun skal ikke danse i kveld. (Ona nie będzie tańczyć dziś wieczorem.) I kveld skal hun danse. (Ona będzie tańczyć dziś wieczorem.) I kveld skal hun ikke danse. (Ona nie będzie tańczyć dziś wieczorem.) D Na końcu zdania jest miejsce na dopełnienie, następnie zaś na okolicznik (najpierw miejsca, potem czasu)."
-    norw_test = "Hun"
-    analyze_test = ["haug", "hus", "venn", "jeg"]
-    print(create_dict(analyze_test))
+    # test = "Zdania proste 1 Helsetninger 1 | FRP sino86, która jest istotna do tego, by zrozumieć Części zdania w zdaniu prostym mają ustaloną kolejność, która j Przekaz, wane treŚci. å . | å + sh 1 F ai 1 i n i i Zdanie w języku norweskim musi zawierać podmiot i orzeczenie. Znajdują py 8 oi Orzeczen; A jest zawsze na drugim miejscu, podmiot na pierwszym lub, jeśli pierwsze miejsce jest zajęte, na trzecim. Przykład Hun danser i kveld. (Ona tańczy dziś wieczorem.) I kveld danser hun. (Ona tańczy dziś wieczorem.) B Jeśli w zdaniu występuje okolicznik zdaniowy (np. IKKE, OFTE, SJELDEN, ALLTID, ALDRI, JO), t0 znajduje się tuż za orzeczeniem. Jeśli za orzeczeniem stoi podmiot, to związek podmiot-orzeczenie nie może uler rozbiciu i okolicznik zdaniowy przechodzi za podmiot. Przykład Hun danser ikke i kveld. (Ona nie tańczy dziś wieczorem.) I kveld danser hun ikke. (Ona nie tańczy dziś wieczorem.) Ę Jeśli orzeczenie w zdaniu jest złożone (np. perfektum, futurum), to okolicznik zdaniowy znajduje się za łącz- nikiem (pierwsza część orzeczenia). Jeśli pierwsze miejsce w zdaniu jest zajęte nie przez podmiot, to nie ulega rozbiciu związek podmiot-łącznik i okolicznik zdaniowy przesuwa się za podmiot. Przykład Hun skal danse i kveld. (Ona będzie tańczyć dziś wieczorem.) Hun skal ikke danse i kveld. (Ona nie będzie tańczyć dziś wieczorem.) I kveld skal hun danse. (Ona będzie tańczyć dziś wieczorem.) I kveld skal hun ikke danse. (Ona nie będzie tańczyć dziś wieczorem.) D Na końcu zdania jest miejsce na dopełnienie, następnie zaś na okolicznik (najpierw miejsca, potem czasu)."
+    # norw_test = "Hun"
+    # analyze_test = ["haug", "hus", "venn", "jeg", "drikker"]
+    # print(create_dict(analyze_test))
+
+    # print(get_lemmas(analyze_test))
+
+    # s = "wordone.wordtwo, wordthree  wordfour"
+    # print(create_word_list(s))
+    t = {
+        'drikke': [
+            {
+            'pos': 'noun',
+            'en_translation': ['drink']
+            },
+            {
+            'pos': 'verb',
+            'en_translation': ['to drink']
+            }
+        ],
+        'pytt': [
+            {
+            'pos': 'noun',
+            'en_translation': ['a pond', 'pool (of water)', 'puddle']
+            }
+        ],
+        'vennen': [
+            {
+            'pos': 'noun',
+            'en_translation': ['definite singular of venn']
+            }
+        ]
+        }
+    print(analyze_text(t))
+    pass
