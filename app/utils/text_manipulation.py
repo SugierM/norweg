@@ -138,7 +138,7 @@ def extract_text(image_path: str) -> str:
     # doc = DocumentFile.from_images(straighten_image_path)
     # return ocr_model(doc).render()
 
-# Different aproach with preprocessing words. Will be changed
+# Different aproach with preprocessing words. Will be changed/deleted
 def clean_accents(data: dict) -> dict:
     """
     Cleans incorrect accents in Norwegian words within a dict.
@@ -229,7 +229,7 @@ def seek_norwegian(words: List[str]) -> List[str]:
 
     return norw_words
 
-
+# Different aproach with preprocessing words. Will be changed/deleted
 def create_dict(words: List[str]) -> dict:
     """
     

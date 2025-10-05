@@ -1,9 +1,9 @@
-from class_http import WikitionaryClient
-from utils import *
-from text_manipulation import *
+from clients.class_http import WikitionaryClient
+from utils.text_manipulation import *
+from utils.utils import *
 from time import time
 
-
+# Not implemented fully
 def preparation_pipeline(img_path: str, parser: WikitionaryClient, chunk_size: int = 3) -> dict:
     """
     
@@ -58,7 +58,7 @@ def preparation_pipeline(img_path: str, parser: WikitionaryClient, chunk_size: i
             print(e)
 
 
-    return proper_dict
+    return proper_dict # -> {'pytt': {'translations': [{'pos': 'noun','en_translation': [...], 'pl_translation': [...]}, ...], 'lemma': 'pyte'}, ...}
         
 if __name__ == "__main__":
     # print(preparation_pipeline("does not matter", WikitionaryClient()))
