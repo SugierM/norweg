@@ -1,6 +1,6 @@
 # from doctr.io import DocumentFile
 # from doctr.models import ocr_predictor
-from utils import *
+from app.utils.utils import *
 import os
 from typing import List
 import pytesseract
@@ -202,10 +202,10 @@ def create_word_list(text: str) -> List[str]:
         if clean:
             words.add(clean)
 
-    return words
+    return set(words)
 
 
-def seek_norwegian(words: List[str]) -> List[str]:
+def seek_norwegian(words: set[str]|List[str]) -> List[str]:
     """
     Filters a list of words, keeping only those found in a Norwegian dictionary.
 

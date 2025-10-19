@@ -17,6 +17,7 @@ to_do.txt
 img/
 temp/
 models/
+project_files/
 
 # For my sanity when learning to use uv
 requirements.txt

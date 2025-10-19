@@ -1,6 +1,6 @@
-from clients.class_http import WikitionaryClient
-from utils.text_manipulation import *
-from utils.utils import *
+from app.clients.class_http import WikitionaryClient
+from app.utils.text_manipulation import *
+from app.utils.utils import *
 from time import time
 
 # Not implemented fully

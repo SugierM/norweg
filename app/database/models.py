@@ -9,7 +9,7 @@ class Word:
 
     word: str
     language_code: str
-    lemma: str
+    lemma: Optional[str] = None
     pos: str
     id: Optional[int] = None
 
@@ -31,11 +31,11 @@ class Word:
         
         """
         return cls(
-            id=row["id"],
             word=row["word"],
             language_code=row["language_code"],
-            lemma=row["lemma"],
-            pos=row.get("pos"),
+            pos=row["pos"],
+            lemma=row.get("lemma"),
+            id=row.get("id"),
         )
     
 
@@ -58,6 +58,7 @@ class Translation:
             "source_word_id": self.source_word_id,
             "target_word_id": self.target_word_id,
             "direction": self.direction,
+            "id": self.id
         }
 
 
@@ -68,7 +69,7 @@ class Translation:
         """
         
         return cls(
-            id=row["id"],
+            id=row.get("id"),
             source_word_id=row["source_word_id"],
             target_word_id=row["target_word_id"],
             direction=row["direction"],
