@@ -6,7 +6,7 @@ from ..models import Translation, Word
     # target_word_id: int
     # direction: str
 
-class WordRepository(BaseRepository):
+class TranslationRepository(BaseRepository):
     """
     Repository for Word table
     """
@@ -38,7 +38,7 @@ class WordRepository(BaseRepository):
             INSERT INTO translations (source_word_id, target_word_id, direction)
             VALUES %s
             ON CONFLICT (source_word_id, target_word_id, direction) DO NOTHING
-            RETURNING id
+            RETURNING id, source_word_id, target_word_id, direction
         """
 
         translations_values = [(t.source_word_id, t.target_word_id, t.direction) for t in translations]
@@ -61,28 +61,18 @@ class WordRepository(BaseRepository):
         return Translation.from_db_row(row) if row else None
     
 
-    def get_translation_for_word(self, word_id: int, direction: Optional[str] = None) -> list[Word]:
+    def get_translation_for_word_id(self, word_id: int) -> list[Word]:
         """
         
         """
-        if direction:
-            query = """
-                SELECT w.id, w.word, w.language_code, w.lemma, w.pos
-                FROM translations t
-                JOIN words w ON w.id = t.target_word_id
-                WHERE t.source_word_id = %s AND t.direction = %s
-            """
 
-            params = (word_id, direction)
-
-        else:
-            query = """
-                SELECT w.id, w.word, w.language_code, w.lemma, w.pos
-                FROM translations t
-                JOIN words w ON w.id = t.target_word_id
-                WHERE t.source_word_id = %s
-            """
-            params = (word_id,)
+        query = """
+            SELECT w.id, w.word, w.language_code, w.lemma, w.pos
+            FROM translations t
+            JOIN words w ON w.id = t.target_word_id
+            WHERE t.source_word_id = %s
+        """
+        params = (word_id,)
 
         rows = self._execute_query(query, params)
         return [Word.from_db_row(row) for row in rows]

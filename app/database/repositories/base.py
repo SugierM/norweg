@@ -9,7 +9,7 @@ class BaseRepository:
 
     def __init__(self, db: NorwegDBConnection):
         self.db = db
-        self.db.c
+        self.db._conn
 
     def _execute_query(self, query: str, params: Optional[tuple | dict] = None) -> list[dict]:
         """
@@ -77,20 +77,13 @@ class BaseRepository:
         if not params_list:
             return []
         
+
         with self.db.get_cursor() as cursor:
-            execute_values(
-                cursor,
-                query,
-                params_list,
-                template=template,
-                page_size=page_size,
-                fetch=fetch
-            )
-
-            try:
-                return cursor.fetchall()
-            except: # If sql query doesn't have RETURNING
-                return [] # May have a problem with debugging
-
-
-################
+            return execute_values(
+                        cursor,
+                        query,
+                        params_list,
+                        template=template,
+                        page_size=page_size,
+                        fetch=fetch,
+                    )

@@ -11,6 +11,7 @@ import spacy
 import re
 
 
+
 load_dotenv()
 pytesseract.pytesseract.tesseract_cmd = os.environ.get("TESSERACT_PATH")
 # Dictionary

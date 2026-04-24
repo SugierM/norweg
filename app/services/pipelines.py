@@ -2,9 +2,10 @@ from app.clients.class_http import WikitionaryClient
 from app.utils.text_manipulation import *
 from app.utils.utils import *
 from time import time
+from app.services.wikitionary_to_db import *
 
 # Not implemented fully
-def preparation_pipeline(img_path: str, parser: WikitionaryClient, chunk_size: int = 3) -> dict:
+def preparation_pipeline(img_path: str, parser: WikitionaryClient = WikitionaryClient(), chunk_size: int = 3) -> dict:
     """
     
     """
@@ -59,6 +60,16 @@ def preparation_pipeline(img_path: str, parser: WikitionaryClient, chunk_size: i
 
 
     return proper_dict # -> {'pytt': {'translations': [{'pos': 'noun','en_translation': [...], 'pl_translation': [...]}, ...], 'lemma': 'pyte'}, ...}
+
+
+def wikitionary_to_db_pipeline(json_response: dict) -> dict:
+    """
+    
+    """
+    word_in_db, new_words = wikitionary_to_db_words(json_response)
+    new_translations = wikitionary_to_db_transltions(json_response, word_in_db, new_words)
+    return {"words": word_in_db.extend(new_words), "translations": new_translations}
+
         
 if __name__ == "__main__":
     # print(preparation_pipeline("does not matter", WikitionaryClient()))

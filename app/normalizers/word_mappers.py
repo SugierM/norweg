@@ -24,6 +24,7 @@ def json_to_list(json_response: dict) -> list[tuple[str, str, str]]:
         lemmas[word] = data["lemma"]
             
     return word_list, lemmas
+      
 
 
 

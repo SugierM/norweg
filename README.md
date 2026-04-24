@@ -35,3 +35,6 @@ Dictionary (NOR -> ENG -> PL As english wikitionary (API) gives more information
 There are some, but main one:  
 - Algorithm used to straighten images only works with white pages (no black backround).  
 And time of course, i wanted to use local OpenAI model, and I can't make it not to think.  
+
+# UI
+Build by LLMs. :)

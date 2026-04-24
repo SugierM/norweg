@@ -8,15 +8,14 @@ class WordRepository(BaseRepository):
     """
     Repository for Word table
     """
-
     def create(self, word: Word) -> Optional[int]:
         """
         
         """
 
         query = """
-            INSERT INTO words (language_code, word, lemma, pos)
-            VALUES (%(language_code)s, %(word)s, %(lemma)s, %(pos)s)
+            INSERT INTO words (word, pos, language_code, lemma)
+            VALUES (%(word)s, %(pos)s, %(language_code)s, %(lemma)s)
             ON CONFLICT (language_code, word, pos) DO NOTHING
             RETURNING id
         """
@@ -33,14 +32,15 @@ class WordRepository(BaseRepository):
             return 0
         
         query = """
-            INSERT INTO words (language_code, word, lemma, pos)
+            INSERT INTO words (word, pos, language_code, lemma)
             VALUES %s
-            ON CONFLICT (language_code, word, pos) DO NOTHING
+            ON CONFLICT (word, pos, language_code) DO NOTHING
             RETURNING language_code, word, lemma, pos, id
         """
 
-        words_values = [(w.language_code, w.word, w.lemma, w.pos) for w in words]
+        words_values = [(w.word, w.pos, w.language_code, w.lemma) for w in words]
         result = self._execute_values(query, words_values)
+        print("OK")
         return result
 
 
@@ -50,7 +50,7 @@ class WordRepository(BaseRepository):
         """
 
         query = """
-            SELECT id, word, language_code, lemma, pos
+            SELECT id, word, pos, language_code, lemma
             FROM words
             WHERE id = %s
         """
@@ -65,7 +65,7 @@ class WordRepository(BaseRepository):
         """
         if pos:
             query = """
-                SELECT id, word, language_code, lemma, pos
+                SELECT id, word, pos, language_code, lemma
                 FROM words
                 WHERE word = %s AND language_code = %s AND pos = %s
             """
@@ -74,14 +74,14 @@ class WordRepository(BaseRepository):
         else:
 
             query = """
-                    SELECT id, word, language_code, lemma, pos
+                    SELECT id, word, pos, language_code, lemma
                     FROM words
                     WHERE word = %s AND language_code = %s
                 """
             params = (word, language_code)
 
         rows = self._execute_query(query, params) # Words with 2 pos can be present, don't want to miss that potentially 
-        return [Word.to_dict(row) for row in rows] if rows else None
+        return [Word.to_dict(row) for row in rows] if rows else []
     
     
     def search_by_pattern(self, pattern: str, language_code: Optional[str] = None) -> list[Word]:
@@ -91,7 +91,7 @@ class WordRepository(BaseRepository):
 
         if language_code:
             query = """
-                SELECT id, word, language_code, lemma, pos
+                SELECT id, word, pos, language_code, lemma
                 FROM words
                 WHERE word ILIKE %s AND language_code = %s
                 ORDER BY word
@@ -100,7 +100,7 @@ class WordRepository(BaseRepository):
             params = (f"%{pattern}%", language_code)
         else:
             query = """
-                SELECT id, word, language_code, lemma, pos
+                SELECT id, word, pos, language_code, lemma
                 FROM words
                 WHERE word ILIKE %s
                 ORDER BY word
@@ -120,7 +120,7 @@ class WordRepository(BaseRepository):
         if not updates:
             return False
         
-        allowed_fields = {"word", "lemma", "pos", "language_code"}
+        allowed_fields = {"word", "pos", "language_code", "lemma"}
         updates = {k: v for k, v in updates.items if k in allowed_fields}
 
         if not updates:
@@ -150,11 +150,11 @@ class WordRepository(BaseRepository):
         word, pos, language_code        
         """
         query = """
-            SELECT w.word, w.language_code, w.lemma, w.pos, w.id
+            SELECT w.id, w.word, w.pos, w.language_code, w.lemma 
             FROM words w
             JOIN (
                 VALUES %s
-            ) AS v(word, pos)
+            ) AS v(word, pos, language_code)
             ON w.word = v.word AND w.pos = v.pos AND w.language_code = v.language_code
         """
 

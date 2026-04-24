@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional 
 
-@dataclass
+@dataclass(eq=False)
 class Word:
     """
     
@@ -9,8 +9,8 @@ class Word:
 
     word: str
     language_code: str
-    lemma: Optional[str] = None
     pos: str
+    lemma: Optional[str] = None
     id: Optional[int] = None
 
     def to_dict(self) -> dict:
@@ -18,12 +18,22 @@ class Word:
         
         """
         return {
-            "word": self.word,
-            "language_code": self.language_code,
-            "lemma": self.lemma,
-            "pos": self.pos,
+            "word": self["word"],
+            "language_code": self["language_code"],
+            "lemma": self["lemma"],
+            "pos": self["pos"],
+            "id": self["id"]
         }
     
+
+    def identity_tuple(self) -> tuple[str, str, str]:
+        return (self.word, self.pos, self.language_code)
+
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Word):
+            return NotImplemented
+        return self.identity_tuple() == other.identity_tuple()
 
     @classmethod
     def from_db_row(cls, row: dict) -> "Word":
