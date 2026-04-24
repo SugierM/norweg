@@ -20,7 +20,7 @@ models/
 project_files/
 
 # For my sanity when learning to use uv
-requirements.txt
+requirements__.txt
 check.txt
 
 # Norwegian Dictionaries
